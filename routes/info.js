@@ -22,7 +22,11 @@ router.post("/", (req, res) => {
   console.log("Received info request:", JSON.stringify(req.body, null, 2));
 
   const toolCallList = req.body?.message?.toolCallList;
-  if (!toolCallList || !Array.isArray(toolCallList) || toolCallList.length === 0) {
+  if (
+    !toolCallList ||
+    !Array.isArray(toolCallList) ||
+    toolCallList.length === 0
+  ) {
     console.log("Error: toolCallList missing or empty");
     return res.status(400).json({ error: "No tool call found" });
   }
@@ -30,20 +34,28 @@ router.post("/", (req, res) => {
   const toolCall = toolCallList[0];
   console.log("Received tool name:", toolCall?.function?.name);
 
-  if (!toolCall?.function?.name || toolCall.function.name.toLowerCase() !== "getinfo") {
+  if (
+    !toolCall?.function?.name ||
+    toolCall.function.name.toLowerCase() !== "getinfo"
+  ) {
     console.log("Error: Unexpected tool name:", toolCall?.function?.name);
     return res.status(400).json({ error: "Unexpected tool name" });
   }
 
   const args = toolCall?.function?.arguments || {};
-  const accountId = args.accountId;
+  const accountId = (args.accountId || "")
+    .toString()
+    .replace(/\s+/g, "") // retire tous les espaces
+    .toUpperCase(); // force en majuscules
 
   if (!accountId) {
     console.log("Error: accountId is required but missing in tool arguments.");
     return res.status(400).json({ error: "accountId is required" });
   }
 
-  const user = users.find((u) => u.accountId.toLowerCase() === accountId.toLowerCase());
+  const user = users.find(
+    (u) => u.accountId.toLowerCase() === accountId.toLowerCase()
+  );
 
   if (!user) {
     console.log(`Error: No user found for accountId: ${accountId}`);
@@ -68,12 +80,11 @@ router.post("/", (req, res) => {
           debtAmount: user.debtAmount,
           employmentStatus: user.employmentStatus,
           monthlyIncome: user.monthlyIncome,
-          expenses: user.expenses
-        }
-      }
-    ]
+          expenses: user.expenses,
+        },
+      },
+    ],
   });
-  
 });
 
 module.exports = router;
